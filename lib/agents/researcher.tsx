@@ -12,6 +12,7 @@ import { BotMessage } from '@/components/message'
 import Exa from 'exa-js'
 import { Card } from '@/components/ui/card'
 import { SearchSection } from '@/components/search-section'
+import { Langfuse } from "langfuse"; // or "langfuse-node"
 
 export async function researcher(
   uiStream: ReturnType<typeof createStreamableUI>,
@@ -34,6 +35,7 @@ export async function researcher(
       <BotMessage content={streamText.value} />
     </Section>
   )
+  // If the specific model is used, update the UI with the answer section
 
   let isFirstToolResponse = true
   const result = await nonexperimental_streamText({
@@ -99,7 +101,8 @@ export async function researcher(
       }
     }
   })
-
+// Add tracing using langfuse with the metadata traceId and spanId also included in the tracing data
+  const langfuse = new Langfuse();
   const toolCalls: ToolCallPart[] = []
   const toolResponses: ToolResultPart[] = []
   for await (const delta of result.fullStream) {
@@ -141,8 +144,11 @@ export async function researcher(
     // Add tool responses to the messages
     messages.push({ role: 'tool', content: toolResponses })
   }
-
-  return { result, fullResponse, hasError, toolResponses }
+  // Add tracing using langfuse with the metadata traceId and spanId also included in the tracing data
+  // track the input and output data of the function
+  langfuse.trace({ name: "researcher", metadata: {result, fullResponse, toolResponses} });
+    
+  return { result, fullResponse, hasError, toolResponses, }
 }
 
 async function tavilySearch(
@@ -164,13 +170,16 @@ async function tavilySearch(
       include_images: true,
       include_answers: true
     })
+      
   })
-
   if (!response.ok) {
     throw new Error(`Error: ${response.status}`)
   }
 
   const data = await response.json()
+  // Add tracing using langfuse with the metadata traceId and spanId also included in the tracing data
+  const langfuse = new Langfuse();
+  langfuse.trace({ name: "tavilySearch", metadata: { query: query } });
   return data
 }
 
