@@ -12,7 +12,7 @@ export interface SearchPageProps {
 }
 
 export async function generateMetadata({ params }: SearchPageProps) {
-  const chat = await getChat(params.id)
+  const chat = await getChat(params.id, 'anonymous')
   return {
     title: chat?.title.toString().slice(0, 50) || 'Search'
   }
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: SearchPageProps) {
 
 export default async function SearchPage({ params }: SearchPageProps) {
   const userId = 'anonymous'
-  const chat = await getChat(params.id)
+  const chat = await getChat(params.id, userId)
 
   if (!chat) {
     redirect('/')
