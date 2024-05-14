@@ -3,6 +3,10 @@ import { Copilot } from '@/components/copilot'
 import { createStreamableUI, createStreamableValue } from 'ai/rsc'
 import { CoreMessage, streamObject } from 'ai'
 import { PartialInquiry, inquirySchema } from '@/lib/schema/inquiry'
+import { Langfuse } from "langfuse"; // or "langfuse-node"
+ 
+// without additional options
+const langfuse = new Langfuse();
 
 export async function inquire(
   uiStream: ReturnType<typeof createStreamableUI>,
@@ -18,7 +22,7 @@ export async function inquire(
 
   let finalInquiry: PartialInquiry = {}
   await streamObject({
-    model: openai.chat(process.env.OPENAI_API_MODEL || 'gpt-4-turbo'),
+    model: openai.chat(process.env.OPENAI_API_MODEL || 'gpt-3.5-turbo'),
     system: `As a professional web researcher, your role is to deepen your understanding of the user's input by conducting further inquiries when necessary.
     After receiving an initial response from the user, carefully assess whether additional questions are absolutely essential to provide a comprehensive and accurate answer. Only proceed with further inquiries if the available information is insufficient or ambiguous.
 
@@ -68,6 +72,6 @@ export async function inquire(
     .finally(() => {
       objectStream.done()
     })
-
-  return finalInquiry
+langfuse.trace({ name: "inquire", metadata: { objectStream: objectStream.value } });
+return finalInquiry
 }

@@ -4,6 +4,10 @@ import { PartialRelated, relatedSchema } from '@/lib/schema/related'
 import { Section } from '@/components/section'
 import SearchRelated from '@/components/search-related'
 import { OpenAI } from '@ai-sdk/openai'
+import { Langfuse } from "langfuse"; // or "langfuse-node"
+
+// without additional options
+const langfuse = new Langfuse();
 
 export async function querySuggestor(
   uiStream: ReturnType<typeof createStreamableUI>,
@@ -22,6 +26,7 @@ export async function querySuggestor(
   )
 
   let finalRelatedQueries: PartialRelated = {}
+
   await streamObject({
     model: openai.chat(process.env.OPENAI_API_MODEL || 'gpt-4-turbo'),
     system: `As a professional web researcher, your task is to generate a set of three queries that explore the subject matter more deeply, building upon the initial query and the information uncovered in its search results.
@@ -39,9 +44,9 @@ export async function querySuggestor(
     Aim to create queries that progressively delve into more specific aspects, implications, or adjacent topics related to the initial query. The goal is to anticipate the user's potential information needs and guide them towards a more comprehensive understanding of the subject matter.
     Please match the language of the response to the user's language.`,
     messages,
-    schema: relatedSchema
+    schema: relatedSchema,
   })
-    .then(async result => {
+    .then(async result => { 
       for await (const obj of result.partialObjectStream) {
         if (obj.items) {
           objectStream.update(obj)
@@ -52,6 +57,10 @@ export async function querySuggestor(
     .finally(() => {
       objectStream.done()
     })
-
+ // Add tracing using langfuse with the metadata traceId and spanId also included in the tracing data 
+    // track the obgectStream value and the final related queries and input and output data of the function 
+    langfuse.trace({ name: "querySuggestor", metadata: { objectStream: objectStream.value } });
+    
+  // Return the final related queries to the caller 
   return finalRelatedQueries
 }

@@ -36,3 +36,25 @@ export type AIMessage = {
     | 'followup'
     | 'end'
 }
+export interface TracingData {
+  traceId: string
+  spanId: string
+  parentId?: string
+}
+
+export type TracedAIMessage = AIMessage & TracingData
+
+export interface TracedChat extends Chat {
+  traceId: string
+}
+
+// Update AIMessage type to include tracing data
+export type AIMessageWithTracing = AIMessage & TracingData
+
+// Update Chat interface to include tracing data
+export interface ChatWithTracing extends Chat {
+  traceId: string
+}
+
+// Update SearchResults type to include tracing data
+export type SearchResultsWithTracing = SearchResults & TracingData

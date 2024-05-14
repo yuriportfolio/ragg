@@ -1,6 +1,7 @@
-import { CoreMessage, generateObject } from 'ai'
+import { CoreMessage, GenerateObjectResult, generateObject } from 'ai'
 import { OpenAI } from '@ai-sdk/openai'
 import { nextActionSchema } from '../schema/next-action'
+import { Langfuse } from "langfuse"; // or "langfuse-node"
 
 // Decide whether inquiry is required for the user input
 export async function taskManager(messages: CoreMessage[]) {
@@ -9,8 +10,8 @@ export async function taskManager(messages: CoreMessage[]) {
     apiKey: process.env.OPENAI_API_KEY, // optional API key, default to env property OPENAI_API_KEY
     organization: '' // optional organization
   })
-
   try {
+    console.log('Generating object...')
     const result = await generateObject({
       model: openai.chat(process.env.OPENAI_API_MODEL || 'gpt-4-turbo'),
       system: `As a professional web researcher, your primary objective is to fully comprehend the user's query, conduct thorough web searches to gather the necessary information, and provide an appropriate response.
@@ -25,10 +26,13 @@ export async function taskManager(messages: CoreMessage[]) {
       messages,
       schema: nextActionSchema
     })
-
+    console.log('Object generated:', result)
     return result
   } catch (error) {
-    console.error(error)
+    console.error('Error generating object:', error)
     return null
   }
 }
+// Add tracing using langfuse with the metadata traceId and spanId also included in the tracing data
+const langfuse = new Langfuse();
+langfuse.trace({ name: "taskManager", metadata: { GenerateObjectResult: generateObject} });
