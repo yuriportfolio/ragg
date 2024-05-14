@@ -33,7 +33,7 @@ export async function getChats(userId?: string | null) {
   }
 }
 
-export async function getChat(id: string) {
+export async function getChat(id: string, userId: string = 'anonymous') {
   const chat = await redis.hgetall<Chat>(`chat:${id}`)
 
   if (!chat) {
@@ -43,7 +43,9 @@ export async function getChat(id: string) {
   return chat
 }
 
-export async function clearChats(userId: string) {
+export async function clearChats(
+  userId: string = 'anonymous'
+): Promise<{ error?: string }> {
   const chats: string[] = await redis.zrange(`user:chat:${userId}`, 0, -1)
   if (!chats.length) {
     return { error: 'No chats to clear' }
@@ -61,7 +63,7 @@ export async function clearChats(userId: string) {
   redirect('/')
 }
 
-export async function saveChat(chat: Chat) {
+export async function saveChat(chat: Chat, userId: string = 'anonymous') {
   const pipeline = redis.pipeline()
   pipeline.hmset(`chat:${chat.id}`, chat)
   pipeline.zadd(`user:chat:${chat.userId}`, {
@@ -69,63 +71,4 @@ export async function saveChat(chat: Chat) {
     member: `chat:${chat.id}`
   })
   await pipeline.exec()
-}
-
-export async function deleteChat(id: string, userId: string) {
-  const pipeline = redis.pipeline()
-  pipeline.del(`chat:${id}`)
-  pipeline.zrem(`user:chat:${userId}`, `chat:${id}`)
-  await pipeline.exec()
-
-  revalidatePath('/')
-  redirect('/')
-}
-
-export async function updateChat(chat: Chat) {
-  await redis.hmset(`chat:${chat.id}`, chat)
-}
-
-export async function createChat(chat: Chat): Promise<string> {
-  const id = `${chat.userId}:${Date.now()}`
-  await redis.hmset(`chat:${id}`, { ...chat, id })
-  await redis.zadd(`user:chat:${chat.userId}`, {
-    score: Date.now(),
-    member: `chat:${id}`
-  })
-
-  return id
-}
-
-export async function getChatMessages(chatId: string) {
-  const messages: string[] = await redis.lrange(`chat:${chatId}:messages`, 0, -1)
-  return messages
-}
-
-export async function addChatMessage(chatId: string, message: string) {
-  await redis.rpush(`chat:${chatId}:messages`, message)
-}
-
-export async function clearChatMessages(chatId: string) {
-  await redis.del(`chat:${chatId}:messages`)
-}
-
-export async function updateChatMessage(chatId: string, messageIndex: number, message: string) {
-  await redis.lset(`chat:${chatId}:messages`, messageIndex, message)
-}
-
-export async function deleteChatMessage(chatId: string, messageIndex: number) {
-  await redis.lset(`chat:${chatId}:messages`, messageIndex, '')
-}
-
-export async function createChatMessage(chatId: string, message: string) {
-  await redis.rpush(`chat:${chatId}:messages`, message)
-}
-
-export async function getChatMessage(
-  chatId: string,
-  messageIndex: number,
-  userId: string = 'anonymous'
-) {
-  const message: string = await redis.lindex(`chat:${ chatId }:messages`, messageIndex) || '' 
-  return message  
 }

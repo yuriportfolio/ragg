@@ -4,8 +4,6 @@ import { CoreMessage, streamText as nonexperimental_streamText } from 'ai'
 import { Section } from '@/components/section'
 import { BotMessage } from '@/components/message'
 import { createAnthropic } from '@ai-sdk/anthropic'
-import { Langfuse } from 'langfuse'
-
 export async function writer(
   uiStream: ReturnType<typeof createStreamableUI>,
   streamText: ReturnType<typeof createStreamableValue<string>>,
@@ -59,9 +57,6 @@ export async function writer(
     .finally(() => {
       streamText.done()
     })
-    // Add tracing using langfuse with the metadata traceId and spanId also included in the tracing data use complete metadata report to get all the information outputs traced
-  //// ({ traceId: 'traceId', spanId: 'spanId', metadata: { key: 'value' } })
-  const langfuse = new Langfuse()
-  langfuse.trace({ name: "writer", metadata: {streamText, fullResponse} });
+
   return fullResponse
 }

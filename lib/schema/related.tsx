@@ -5,8 +5,7 @@ export const relatedSchema = z.object({
   items: z
     .array(
       z.object({
-        query: z.string(),
-        trace: z.string().optional() // Add the 'optional' modifier to make 'trace' property optional
+        query: z.string()
       })
     )
     .length(3)
