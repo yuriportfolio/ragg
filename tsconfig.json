@@ -22,5 +22,10 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "devDependencies": {
+    "@types/hast": "^2.0.0",
+    "@types/mdast": "^4.0.0",
+    "@types/unist": "^3.0.0"
+  }
 }
